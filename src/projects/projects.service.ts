@@ -1,26 +1,57 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Project } from './entities/project.entity';
+import { ScannerService } from '../scanner/scanner.service';
+import { FilesService } from '../files/files.service';
 import { CreateProjectDto } from './dto/create-project.dto';
-import { UpdateProjectDto } from './dto/update-project.dto';
 
 @Injectable()
 export class ProjectsService {
-  create(createProjectDto: CreateProjectDto) {
-    return 'This action adds a new project';
+  constructor(
+    @InjectRepository(Project)
+    private projectRepo: Repository<Project>,
+    private scannerService: ScannerService,
+    private filesService: FilesService,
+  ) {}
+
+  // CREATE
+  create(dto: CreateProjectDto) {
+    const project = this.projectRepo.create(dto);
+    return this.projectRepo.save(project);
   }
 
+  // FIND ALL
   findAll() {
-    return `This action returns all projects`;
+    return this.projectRepo.find();
   }
 
+  // FIND ONE
   findOne(id: number) {
-    return `This action returns a #${id} project`;
+    return this.projectRepo.findOneBy({ id });
   }
 
-  update(id: number, updateProjectDto: UpdateProjectDto) {
-    return `This action updates a #${id} project`;
+  // DELETE
+  async remove(id: number) {
+    await this.projectRepo.delete(id);
+    return { message: 'Deleted successfully' };
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} project`;
+  // SCAN PROJECT (CORE FLOW)
+  async scanProject(projectId: number) {
+    const project = await this.projectRepo.findOneBy({ id: projectId });
+
+    if (!project) {
+      throw new Error('Project not found');
+    }
+
+    const scannedFiles = await this.scannerService.scan(project.path);
+
+    await this.filesService.saveFiles(project.id, scannedFiles);
+
+    return {
+      message: 'Scan completed',
+      filesScanned: scannedFiles.length,
+    };
   }
 }

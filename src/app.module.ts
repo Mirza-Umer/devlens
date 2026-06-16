@@ -3,6 +3,9 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProjectsModule } from './projects/projects.module';
+import { FilesModule } from './files/files.module';
+import { ScannerModule } from './scanner/scanner.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -14,9 +17,13 @@ import { ProjectsModule } from './projects/projects.module';
       password: 'POSTGRES',
       database: 'devlens-db',
       autoLoadEntities: true,
-      synchronize: true,
+      synchronize: false,
+      logging: true,
     }),
     ProjectsModule,
+    FilesModule,
+    ScannerModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],
