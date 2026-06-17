@@ -15,10 +15,12 @@ export class ProjectsService {
     private filesService: FilesService,
   ) {}
 
-  // CREATE
-  create(dto: CreateProjectDto) {
+  async create(dto: CreateProjectDto) {
     const project = this.projectRepo.create(dto);
-    return this.projectRepo.save(project);
+    const savedProject = await this.projectRepo.save(project);
+    // Automatically scan the project after creating it
+    await this.scanProject(savedProject.id);
+    return savedProject;
   }
 
   // FIND ALL

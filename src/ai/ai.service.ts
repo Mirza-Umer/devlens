@@ -54,8 +54,7 @@ export class AiService {
     const topFiles = files.slice(0, 10);
     const context = this.buildContext(topFiles);
 
-    // Notice how we removed the <scratchpad> instructions from the prompt
-    // because we will enforce it via the JSON schema below.
+
     const prompt = `
 You are a Senior Software Architect.
 
@@ -77,7 +76,7 @@ ${question}
 </question>
 `;
 
-    // Initialize Gemini with a strict JSON Schema configuration
+
     const model = this.genAI.getGenerativeModel({
       model: 'gemini-2.5-flash',
       generationConfig: {

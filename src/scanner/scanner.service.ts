@@ -7,8 +7,9 @@ import { ALLOWED_EXTENSIONS, IGNORE_PATTERNS } from './scanner.ignore';
 @Injectable()
 export class ScannerService {
   async scan(projectPath: string) {
+    const normalizedPath = projectPath.replace(/\\/g, '/');
     const files = await fg(['**/*.*'], {
-      cwd: projectPath,
+      cwd: normalizedPath,
       absolute: true,
       onlyFiles: true,
       ignore: IGNORE_PATTERNS,

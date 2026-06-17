@@ -48,6 +48,9 @@ export class FilesService {
 
   // SAVE SCANNED FILES
   async saveFiles(projectId: number, files: any[]) {
+    // Clear old files for this project to prevent duplicates on rescan
+    await this.fileRepo.delete({ projectId });
+
     const entities = files.map((f) =>
       this.fileRepo.create({
         projectId,
@@ -56,7 +59,8 @@ export class FilesService {
       }),
     );
 
-    return this.fileRepo.save(entities);
+    // Save in chunks to avoid Postgres parameter limit errors for large projects
+    return this.fileRepo.save(entities, { chunk: 100 });
   }
 
   async search(projectId: number, query: string) {
