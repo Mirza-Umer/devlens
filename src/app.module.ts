@@ -18,7 +18,7 @@ import { ConfigModule } from '@nestjs/config';
       password: 'POSTGRES',
       database: 'devlens-db',
       autoLoadEntities: true,
-      synchronize: false,
+      synchronize: true,
       logging: true,
 
     }),

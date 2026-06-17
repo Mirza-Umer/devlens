@@ -9,5 +9,6 @@ import { Project } from '../projects/entities/project.entity';
   controllers: [FilesController],
   providers: [FilesService],
   imports: [TypeOrmModule.forFeature([FileEntity])],
+  exports: [FilesService],
 })
 export class FilesModule {}

@@ -1,13 +1,27 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import { FilesService } from '../files/files.service';
+import { ChatMessage, ChatRole } from './entities/chat-message.entity';
 
 @Injectable()
 export class AiService {
   // Initialize the Gemini Client
   private genAI:GoogleGenerativeAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-  constructor(private readonly filesService: FilesService) {}
+  constructor(
+    @InjectRepository(ChatMessage)
+    private chatRepo: Repository<ChatMessage>,
+    private readonly filesService: FilesService,
+  ) {}
+
+  async getHistory(projectId: number) {
+    return this.chatRepo.find({
+      where: { projectId },
+      order: { createdAt: 'ASC' },
+    });
+  }
 
   private extractKeywords(question: string): string[] {
     return question
@@ -44,6 +58,15 @@ export class AiService {
   }
 
   async chat(projectId: number, question: string) {
+    // Save user message
+    await this.chatRepo.save(
+      this.chatRepo.create({
+        projectId,
+        role: ChatRole.USER,
+        content: question,
+      }),
+    );
+
     const keywords = this.extractKeywords(question);
     const files = await this.filesService.searchMany(projectId, keywords);
 
@@ -103,10 +126,22 @@ ${question}
 
     // Parse the guaranteed JSON response
     const jsonResponse = JSON.parse(result.response.text());
+    const answer = jsonResponse.markdownSummary;
+    const filesUsed = topFiles.map((f: any) => f.path);
+
+    // Save AI message
+    await this.chatRepo.save(
+      this.chatRepo.create({
+        projectId,
+        role: ChatRole.AI,
+        content: answer,
+        filesUsed,
+      }),
+    );
 
     return {
-      answer: jsonResponse.markdownSummary, // We only return the final markdown to the frontend!
-      filesUsed: topFiles.map((f: any) => f.path),
+      answer,
+      filesUsed,
     };
   }
 
