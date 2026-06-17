@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import axios from 'axios';
+import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import { FilesService } from '../files/files.service';
 
 @Injectable()
 export class AiService {
+  // Initialize the Gemini Client
+  private genAI:GoogleGenerativeAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+
   constructor(private readonly filesService: FilesService) {}
+
   private extractKeywords(question: string): string[] {
     return question
       .toLowerCase()
@@ -26,72 +30,91 @@ export class AiService {
             'on',
             'for',
             'with',
+            'how',
+            'where',
+            'what',
           ].includes(word),
-      );
+      )
+      .map((word) => {
+        if (word.endsWith('ing')) return word.slice(0, -3);
+        if (word.endsWith('ion')) return word.slice(0, -3);
+        if (word.endsWith('ed')) return word.slice(0, -2);
+        return word;
+      });
   }
 
   async chat(projectId: number, question: string) {
     const keywords = this.extractKeywords(question);
-
-    console.log('Keywords:', keywords);
-
     const files = await this.filesService.searchMany(projectId, keywords);
+
     if (files.length === 0) {
-      return {
-        answer: 'NO_FILES_FOUND',
-        filesUsed: [],
-      };
+      return { answer: 'NO_FILES_FOUND', filesUsed: [] };
     }
 
     const topFiles = files.slice(0, 10);
-
-    if (topFiles.length > 0) {
-      console.log('First file:', topFiles[0]);
-    }
-
     const context = this.buildContext(topFiles);
 
+    // Notice how we removed the <scratchpad> instructions from the prompt
+    // because we will enforce it via the JSON schema below.
     const prompt = `
-You are a senior software architect.
+You are a Senior Software Architect.
 
 TASK:
-Explain where the requested logic is implemented.
+Analyze the provided codebase context and explain where and how the requested logic is implemented.
 
-RULES:
-- Use ONLY the provided files
-- NEVER return full file paths
-- ALWAYS summarize in human readable form
-- Group related files together
-- Explain briefly what each file does
+CONSTRAINTS & RULES:
+- Grounding: Use EXCLUSIVELY the provided context. If the answer is truly not present after careful analysis, output: "I cannot determine this from the provided files."
+- File Paths: Use base filenames or short module names. NEVER output absolute/full file paths.
+- Plain English: Summarize the logic conceptually. Do not just regurgitate raw code.
+- Organization: Group related files logically (e.g., by feature, architecture layer, or domain).
 
-FORMAT:
-- bullet points only
-
-FILES:
+<context>
 ${context}
+</context>
 
-QUESTION:
+<question>
 ${question}
+</question>
 `;
 
-    console.log('================================');
-    console.log(prompt);
-    console.log('================================');
-
-    const response = await axios.post('http://localhost:11434/api/generate', {
-      model: 'qwen2.5-coder:7b',
-      prompt,
-      stream: false,
+    // Initialize Gemini with a strict JSON Schema configuration
+    const model = this.genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: SchemaType.OBJECT,
+          properties: {
+            analysis: {
+              type: SchemaType.STRING,
+              description: 'Step-by-step analysis of the core concepts and file evaluation. (Hidden from user)',
+            },
+            markdownSummary: {
+              type: SchemaType.STRING,
+              description: 'The final, formatted bulleted list grouping the related files and explaining the logic.',
+            },
+          },
+          required: ['analysis', 'markdownSummary'],
+        },
+      },
     });
 
+    // Execute the prompt
+    const result = await model.generateContent(prompt);
+
+    // Parse the guaranteed JSON response
+    const jsonResponse = JSON.parse(result.response.text());
+
     return {
-      answer: response.data.response,
+      answer: jsonResponse.markdownSummary, // We only return the final markdown to the frontend!
       filesUsed: topFiles.map((f: any) => f.path),
     };
   }
 
   // 🧠 Context builder
   private buildContext(files: any[]) {
-    return files.map((f) => `FILE_PATH: ${f.path}`).join('\n');
+    return files
+      .map((f) => `--- FILE: ${f.path} ---\n${f.content}\n`)
+      .join('\n\n');
   }
 }

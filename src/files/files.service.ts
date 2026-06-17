@@ -19,7 +19,6 @@ export class FilesService {
 
   private scoreFile(path: string, keywords: string[]): number {
     let score = 0;
-
     const lowerPath = path.toLowerCase();
 
     for (const keyword of keywords) {
@@ -41,6 +40,7 @@ export class FilesService {
 
     return score;
   }
+
   constructor(
     @InjectRepository(FileEntity)
     private fileRepo: Repository<FileEntity>,
@@ -68,13 +68,11 @@ export class FilesService {
         { q: `%${query}%` },
       )
       .orderBy(
-        `
-      CASE
-        WHEN LOWER(file.path) LIKE LOWER(:exact) THEN 1
-        WHEN LOWER(file.content) LIKE LOWER(:exact) THEN 2
-        ELSE 3
-      END
-      `,
+        `CASE
+          WHEN LOWER(file.path) LIKE LOWER(:exact) THEN 1
+          WHEN LOWER(file.content) LIKE LOWER(:exact) THEN 2
+          ELSE 3
+        END`,
       )
       .setParameter('exact', `%${query}%`)
       .take(10)
@@ -94,14 +92,16 @@ export class FilesService {
         ),
       );
     }
+
     results = results.filter((file) => !this.isIgnored(file.path));
 
-    results = results.filter((file) => this.scoreFile(file.path, keywords) > 0);
-
+    // 🔥 FIX: Removed the filter that drops score <= 0.
+    // Now we ONLY sort, meaning content-only matches are preserved!
     results.sort(
       (a, b) =>
         this.scoreFile(b.path, keywords) - this.scoreFile(a.path, keywords),
     );
+
     // 🔥 fallback if nothing found
     if (results.length === 0 && keywords.length > 0) {
       const fallback = await this.search(projectId, keywords.join(' '));
