@@ -19,7 +19,6 @@ import { ConfigModule } from '@nestjs/config';
       database: 'devlens-db',
       autoLoadEntities: true,
       synchronize: true,
-      logging: true,
 
     }),
     ProjectsModule,

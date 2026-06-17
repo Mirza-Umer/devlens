@@ -101,7 +101,7 @@ ${question}
 
 
     const model = this.genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.1-flash-lite',
       generationConfig: {
         responseMimeType: 'application/json',
         responseSchema: {
@@ -109,11 +109,13 @@ ${question}
           properties: {
             analysis: {
               type: SchemaType.STRING,
-              description: 'Step-by-step analysis of the core concepts and file evaluation. (Hidden from user)',
+              description:
+                'Step-by-step analysis of the core concepts and file evaluation. (Hidden from user)',
             },
             markdownSummary: {
               type: SchemaType.STRING,
-              description: 'The final, formatted bulleted list grouping the related files and explaining the logic.',
+              description:
+                'The final, formatted bulleted list grouping the related files and explaining the logic.',
             },
           },
           required: ['analysis', 'markdownSummary'],
