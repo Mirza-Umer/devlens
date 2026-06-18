@@ -7,6 +7,8 @@ import { FilesModule } from './files/files.module';
 import { ScannerModule } from './scanner/scanner.module';
 import { AiModule } from './ai/ai.module';
 import { ConfigModule } from '@nestjs/config';
+import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { ConfigModule } from '@nestjs/config';
     FilesModule,
     ScannerModule,
     AiModule,
+    UsersModule,
+    AuthModule,
     ConfigModule.forRoot({
       isGlobal: true,
     })
