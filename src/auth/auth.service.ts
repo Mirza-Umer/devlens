@@ -20,10 +20,10 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const payload = { email: user.email, sub: user.id };
+    const payload = { email: user.email, sub: user.id, role: user.role };
     return {
       access_token: this.jwtService.sign(payload),
-      user: { id: user.id, email: user.email, name: user.name }
+      user: { id: user.id, email: user.email, name: user.name, role: user.role }
     };
   }
 
@@ -33,12 +33,16 @@ export class AuthService {
       throw new ConflictException('User already exists');
     }
 
+    const superAdmins = ['mirzaumer292@gmail.com', 'umarextra000@gmail.com'];
+    const assignedRole = superAdmins.includes(data.email) ? 'admin' : 'user';
+
     const hashedPassword = await bcrypt.hash(data.password, 10);
     const user = await this.usersService.create({
       name: data.name,
       email: data.email,
       password: hashedPassword,
-      ipAddress: data.ipAddress
+      ipAddress: data.ipAddress,
+      role: assignedRole
     });
 
     return this.login(user);

@@ -15,8 +15,8 @@ export class ProjectsService {
     private filesService: FilesService,
   ) {}
 
-  async create(dto: CreateProjectDto) {
-    const project = this.projectRepo.create(dto);
+  async create(dto: CreateProjectDto, userId: string) {
+    const project = this.projectRepo.create({ ...dto, userId });
     const savedProject = await this.projectRepo.save(project);
     // Automatically scan the project after creating it
     await this.scanProject(savedProject.id);
@@ -24,18 +24,18 @@ export class ProjectsService {
   }
 
   // FIND ALL
-  findAll() {
-    return this.projectRepo.find();
+  findAll(userId: string) {
+    return this.projectRepo.find({ where: { userId } });
   }
 
   // FIND ONE
-  findOne(id: number) {
-    return this.projectRepo.findOneBy({ id });
+  findOne(id: number, userId: string) {
+    return this.projectRepo.findOneBy({ id, userId });
   }
 
   // DELETE
-  async remove(id: number) {
-    await this.projectRepo.delete(id);
+  async remove(id: number, userId: string) {
+    await this.projectRepo.delete({ id, userId });
     return { message: 'Deleted successfully' };
   }
 

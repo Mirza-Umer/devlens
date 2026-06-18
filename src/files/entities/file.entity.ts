@@ -4,15 +4,22 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn
 } from 'typeorm';
+import { Project } from '../../projects/entities/project.entity';
 
 @Entity()
 export class FileEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ nullable: true })
   projectId: number;
+
+  @ManyToOne(() => Project, project => project.files, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'projectId' })
+  project: Project;
 
   @Column()
   path: string; // full file path inside project

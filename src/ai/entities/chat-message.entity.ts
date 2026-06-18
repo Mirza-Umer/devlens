@@ -3,7 +3,10 @@ import {
   CreateDateColumn,
   Entity,
   PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn
 } from 'typeorm';
+import { Project } from '../../projects/entities/project.entity';
 
 export enum ChatRole {
   USER = 'user',
@@ -15,8 +18,12 @@ export class ChatMessage {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ nullable: true })
   projectId: number;
+
+  @ManyToOne(() => Project, project => project.chatMessages, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'projectId' })
+  project: Project;
 
   @Column({
     type: 'enum',

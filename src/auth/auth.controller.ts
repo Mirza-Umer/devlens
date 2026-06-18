@@ -21,7 +21,10 @@ export class AuthController {
   @Public()
   @Post('register')
   async register(@Body() registerDto: Record<string, any>, @Req() req: Request) {
-    const ipAddress = req.ip || req.connection?.remoteAddress;
+    let ipAddress = req.ip || req.connection?.remoteAddress;
+    if (ipAddress === '::1' || ipAddress === '::ffff:127.0.0.1') {
+      ipAddress = '127.0.0.1 (Localhost)';
+    }
     return this.authService.register({ ...registerDto, ipAddress });
   }
 }
