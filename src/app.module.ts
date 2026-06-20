@@ -14,14 +14,15 @@ import { AuthModule } from './auth/auth.module';
   imports: [
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'postgres',
-      password: 'POSTGRES',
-      database: 'devlens-db',
+      url: process.env.DATABASE_URL,
+      host: process.env.DB_HOST ?? 'localhost',
+      port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 5432,
+      username: process.env.DB_USERNAME ?? 'postgres',
+      password: process.env.DB_PASSWORD ?? 'POSTGRES',
+      database: process.env.DB_DATABASE ?? 'devlens-db',
       autoLoadEntities: true,
       synchronize: true,
-
+      ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
     }),
     ProjectsModule,
     FilesModule,

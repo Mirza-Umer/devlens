@@ -13,7 +13,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
     UsersModule,
     PassportModule,
     JwtModule.register({
-      secret: 'devlens-super-secret-key-change-me', // In production, use environment variables
+      secret: process.env.JWT_SECRET ?? 'devlens-super-secret-key-change-me', // In production, use environment variables
       signOptions: { expiresIn: '7d' }, // Tokens valid for 7 days
     }),
   ],
