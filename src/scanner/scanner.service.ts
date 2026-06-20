@@ -2,12 +2,32 @@ import { Injectable } from '@nestjs/common';
 import fg from 'fast-glob';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import { ALLOWED_EXTENSIONS, IGNORE_PATTERNS } from './scanner.ignore';
+
+const execAsync = promisify(exec);
 
 @Injectable()
 export class ScannerService {
   async scan(projectPath: string) {
-    const normalizedPath = projectPath.replace(/\\/g, '/');
+    const isGit = projectPath.startsWith('http') || projectPath.startsWith('git@');
+    let scanTarget = projectPath;
+    let tempDir = '';
+
+    if (isGit) {
+      tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'devlens-clone-'));
+      scanTarget = tempDir;
+      try {
+        await execAsync(`git clone --depth 1 ${projectPath} ${tempDir}`);
+      } catch (err: any) {
+        if (tempDir) fs.rmSync(tempDir, { recursive: true, force: true });
+        throw new Error('Failed to clone Git repository: ' + err.message);
+      }
+    }
+
+    const normalizedPath = scanTarget.replace(/\\/g, '/');
     const files = await fg(['**/*.*'], {
       cwd: normalizedPath,
       absolute: true,
@@ -24,10 +44,16 @@ export class ScannerService {
 
       if (!content) continue;
 
+      const displayPath = isGit ? file.replace(normalizedPath + '/', '') : file;
+
       result.push({
-        path: file,
+        path: displayPath,
         content,
       });
+    }
+
+    if (isGit && tempDir) {
+      fs.rmSync(tempDir, { recursive: true, force: true });
     }
 
     return result;
