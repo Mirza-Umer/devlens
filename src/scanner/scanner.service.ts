@@ -12,6 +12,7 @@ const execAsync = promisify(exec);
 @Injectable()
 export class ScannerService {
   async scan(projectPath: string) {
+    projectPath = projectPath.trim();
     const isGit = projectPath.startsWith('http') || projectPath.startsWith('git@');
     let scanTarget = projectPath;
     let tempDir = '';
@@ -20,10 +21,12 @@ export class ScannerService {
       tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'devlens-clone-'));
       scanTarget = tempDir;
       try {
-        await execAsync(`git clone --depth 1 ${projectPath} ${tempDir}`);
+        console.log(`Cloning repository: ${projectPath} into ${tempDir}`);
+        await execAsync(`git clone -q --depth 1 "${projectPath}" "${tempDir}"`);
       } catch (err: any) {
+        console.error('Git clone failed:', err);
         if (tempDir) fs.rmSync(tempDir, { recursive: true, force: true });
-        throw new Error('Failed to clone Git repository: ' + err.message);
+        throw new Error('Failed to clone Git repository: ' + (err.stderr || err.message));
       }
     }
 
