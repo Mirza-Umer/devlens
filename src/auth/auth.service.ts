@@ -2,17 +2,60 @@ import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/co
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { OAuth2Client } from 'google-auth-library';
 
 @Injectable()
 export class AuthService {
+  private googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService
   ) {}
 
+  getGoogleClientId(): string {
+    return process.env.GOOGLE_CLIENT_ID || '';
+  }
+
+  async verifyGoogleToken(token: string): Promise<any> {
+    try {
+      const ticket = await this.googleClient.verifyIdToken({
+        idToken: token,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      const payload = ticket.getPayload();
+      if (!payload) {
+        throw new UnauthorizedException('Invalid Google token payload');
+      }
+
+      const { email, name } = payload;
+      if (!email) {
+        throw new UnauthorizedException('Google token does not contain an email');
+      }
+
+      // Check if user exists
+      let user = await this.usersService.findOneByEmail(email);
+      if (!user) {
+        // Automatically register Google user
+        const superAdmins = ['mirzaumer292@gmail.com', 'umarextra000@gmail.com'];
+        const assignedRole = superAdmins.includes(email) ? 'admin' : 'user';
+
+        user = await this.usersService.create({
+          name: name || email.split('@')[0],
+          email: email,
+          role: assignedRole,
+        });
+      }
+
+      return user;
+    } catch (error: any) {
+      throw new UnauthorizedException(error.message || 'Google authentication failed');
+    }
+  }
+
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.usersService.findOneByEmail(email);
-    if (user && await bcrypt.compare(pass, user.password)) {
+    if (user && user.password && await bcrypt.compare(pass, user.password)) {
       const { password, ...result } = user;
       return result;
     }

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, UnauthorizedException, Req } from '@nestjs/common';
+import { Controller, Post, Get, Body, HttpCode, HttpStatus, UnauthorizedException, Req } from '@nestjs/common';
 import type { Request } from 'express';
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
@@ -26,5 +26,24 @@ export class AuthController {
       ipAddress = '127.0.0.1 (Localhost)';
     }
     return this.authService.register({ ...registerDto, ipAddress });
+  }
+
+  @Public()
+  @Get('config')
+  async getConfig() {
+    return {
+      googleClientId: this.authService.getGoogleClientId(),
+    };
+  }
+
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @Post('google')
+  async googleLogin(@Body() body: { token: string }) {
+    if (!body.token) {
+      throw new UnauthorizedException('Token is required');
+    }
+    const user = await this.authService.verifyGoogleToken(body.token);
+    return this.authService.login(user);
   }
 }
