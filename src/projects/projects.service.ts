@@ -18,9 +18,14 @@ export class ProjectsService {
   async create(dto: CreateProjectDto, userId: string) {
     const project = this.projectRepo.create({ ...dto, userId });
     const savedProject = await this.projectRepo.save(project);
-    // Automatically scan the project after creating it
-    await this.scanProject(savedProject.id);
-    return savedProject;
+    try {
+      // Automatically scan the project after creating it
+      await this.scanProject(savedProject.id);
+      return savedProject;
+    } catch (err) {
+      await this.projectRepo.delete(savedProject.id);
+      throw err;
+    }
   }
 
   // FIND ALL

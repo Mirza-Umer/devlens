@@ -22,7 +22,9 @@ export class ScannerService {
       scanTarget = tempDir;
       try {
         console.log(`Cloning repository: ${projectPath} into ${tempDir}`);
-        await execAsync(`git clone -q --depth 1 "${projectPath}" "${tempDir}"`);
+        await execAsync(`git clone -q --depth 1 "${projectPath}" "${tempDir}"`, {
+          env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+        });
       } catch (err: any) {
         console.error('Git clone failed:', err);
         if (tempDir) fs.rmSync(tempDir, { recursive: true, force: true });
