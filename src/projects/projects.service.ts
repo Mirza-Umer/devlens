@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Project } from './entities/project.entity';
@@ -22,9 +22,9 @@ export class ProjectsService {
       // Automatically scan the project after creating it
       await this.scanProject(savedProject.id);
       return savedProject;
-    } catch (err) {
+    } catch (err: any) {
       await this.projectRepo.delete(savedProject.id);
-      throw err;
+      throw new BadRequestException(err.message || 'Failed to scan project');
     }
   }
 
