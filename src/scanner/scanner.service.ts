@@ -14,6 +14,11 @@ export class ScannerService {
   async scan(projectPath: string) {
     projectPath = projectPath.trim();
     const isGit = projectPath.startsWith('http') || projectPath.startsWith('git@');
+    
+    if (!isGit && process.env.NODE_ENV === 'production') {
+      throw new Error('Local folder paths cannot be scanned from the cloud. Please provide a GitHub URL instead.');
+    }
+
     let scanTarget = projectPath;
     let tempDir = '';
 

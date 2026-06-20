@@ -5,7 +5,7 @@ import { Public } from './decorators/public.decorator';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @Public()
   @HttpCode(HttpStatus.OK)
@@ -22,9 +22,9 @@ export class AuthController {
   @Post('register')
   async register(@Body() registerDto: Record<string, any>, @Req() req: Request) {
     let ipAddress = req.ip || req.connection?.remoteAddress;
-    if (ipAddress === '::1' || ipAddress === '::ffff:127.0.0.1') {
-      ipAddress = '127.0.0.1 (Localhost)';
-    }
+    // if (ipAddress === '::1' || ipAddress === '::ffff:127.0.0.1') {
+    //   ipAddress = '127.0.0.1 (Localhost)';
+    // }
     return this.authService.register({ ...registerDto, ipAddress });
   }
 
