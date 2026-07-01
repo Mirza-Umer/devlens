@@ -14,6 +14,20 @@ export class UsersService {
     return this.usersRepository.findOneBy({ email });
   }
 
+  async findOneById(id: string, includeToken = false): Promise<User | null> {
+    if (includeToken) {
+      return this.usersRepository.createQueryBuilder('user')
+        .addSelect('user.gitHubToken')
+        .where('user.id = :id', { id })
+        .getOne();
+    }
+    return this.usersRepository.findOneBy({ id });
+  }
+
+  async updateGitHubToken(id: string, token: string | null): Promise<void> {
+    await this.usersRepository.update(id, { gitHubToken: token || undefined });
+  }
+
   async findAll(): Promise<any[]> {
     const users = await this.usersRepository.find({
       order: { createdAt: 'DESC' }

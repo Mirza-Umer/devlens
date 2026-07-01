@@ -21,6 +21,9 @@ export class User {
   @Column({ default: 'user' })
   role!: string;
 
+  @Column({ nullable: true, select: false })
+  gitHubToken?: string;
+
   @OneToMany(() => Project, project => project.user)
   projects!: Project[];
 

@@ -46,13 +46,26 @@ export class ProjectsService {
 
   // SCAN PROJECT (CORE FLOW)
   async scanProject(projectId: number) {
-    const project = await this.projectRepo.findOneBy({ id: projectId });
+    const project = await this.projectRepo.createQueryBuilder('project')
+      .leftJoinAndSelect('project.user', 'user')
+      .addSelect('user.gitHubToken')
+      .where('project.id = :id', { id: projectId })
+      .getOne();
 
     if (!project) {
       throw new Error('Project not found');
     }
 
-    const scannedFiles = await this.scannerService.scan(project.path);
+    let scanPath = project.path;
+    if (project.user?.gitHubToken && (scanPath.startsWith('http') || scanPath.startsWith('git@'))) {
+      if (scanPath.startsWith('https://github.com/') && !scanPath.includes('@github.com')) {
+        scanPath = scanPath.replace('https://github.com/', `https://${project.user.gitHubToken}@github.com/`);
+      } else if (scanPath.startsWith('https://www.github.com/') && !scanPath.includes('@github.com')) {
+        scanPath = scanPath.replace('https://www.github.com/', `https://${project.user.gitHubToken}@github.com/`);
+      }
+    }
+
+    const scannedFiles = await this.scannerService.scan(scanPath);
 
     await this.filesService.saveFiles(project.id, scannedFiles);
 
