@@ -18,6 +18,27 @@ export class User {
   @Column({ nullable: true })
   ipAddress!: string;
 
+  @Column({ nullable: true })
+  city?: string;
+
+  @Column({ nullable: true })
+  region?: string;
+
+  @Column({ nullable: true })
+  country?: string;
+
+  @Column({ nullable: true })
+  latitude?: string;
+
+  @Column({ nullable: true })
+  longitude?: string;
+
+  @Column({ nullable: true })
+  timezone?: string;
+
+  @Column({ nullable: true })
+  org?: string;
+
   @Column({ default: 'user' })
   role!: string;
 
