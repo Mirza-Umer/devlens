@@ -26,7 +26,8 @@ export class ScannerService {
       tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'devlens-clone-'));
       scanTarget = tempDir;
       try {
-        console.log(`Cloning repository: ${projectPath} into ${tempDir}`);
+        const safePath = projectPath.replace(/:\/\/([^@]+)@/, '://***@');
+        console.log(`Cloning repository: ${safePath} into ${tempDir}`);
         await execAsync(`git clone -q --depth 1 "${projectPath}" "${tempDir}"`, {
           env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
         });

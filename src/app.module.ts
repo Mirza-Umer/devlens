@@ -12,13 +12,16 @@ import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       url: process.env.DATABASE_URL,
       host: process.env.DB_HOST ?? 'localhost',
       port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 5432,
       username: process.env.DB_USERNAME ?? 'postgres',
-      password: process.env.DB_PASSWORD ?? 'POSTGRES',
+      password: process.env.DB_PASSWORD ?? 'postgres',
       database: process.env.DB_DATABASE ?? 'devlens-db',
       autoLoadEntities: true,
       synchronize: true,
@@ -30,11 +33,9 @@ import { AuthModule } from './auth/auth.module';
     AiModule,
     UsersModule,
     AuthModule,
-    ConfigModule.forRoot({
-      isGlobal: true,
-    })
+
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
