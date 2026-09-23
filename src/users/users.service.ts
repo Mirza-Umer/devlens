@@ -27,7 +27,7 @@ export class UsersService {
   }
 
   async updateGitHubToken(id: string, token: string | null): Promise<void> {
-    await this.usersRepository.update(id, { gitHubToken: token || undefined });
+    await this.usersRepository.update(id, { gitHubToken: token || null });
   }
 
   async findAll(): Promise<any[]> {
